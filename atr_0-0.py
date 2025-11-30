@@ -7,29 +7,29 @@ class AvalonApp:
         self.root = root
         self.root.title("Avalon Game")
 
-        # Player and role setup
-        self.original_players = []     # preserve input order
+        
+        self.original_players = []    
         self.entries = []
         self.use_merlin = tk.BooleanVar(value=True)
         self.use_percival = tk.BooleanVar(value=True)
-        self.roles = {}                # mapping player->role
-        self.current_player_index = 0  # for role reveal
+        self.roles = {}                
+        self.current_player_index = 0  
 
-        # Game state
+      
         self.round_number = 1
         self.failed_proposals = 0
         self.previous_leaders = []
         self.selected_team = []
-        self.mission_results = []      # list of bools: True=pass
-        self.metadata = []             # chronological logs
-        self.past_missions = []        # list of dicts (leader, team, pass, fails, rejections?)
+        self.mission_results = []      
+        self.metadata = []             # for metadata section in the app; contains auxililary data about the game used for deduction aspects.
+        self.past_missions = []        # additional history for deduction
 
         # Config
         self.max_failed_proposals = 5  # fixed
 
         self.setup_ui()
 
-    # ---------------------- SETUP UI ---------------------- #
+
     def setup_ui(self):
         self.clear_root()
         tk.Label(self.root, text="Enter 5–10 player names:", font=("Arial", 14)).pack(pady=10)
@@ -72,7 +72,7 @@ class AvalonApp:
         tk.Label(self.root, text=summary, font=("Arial",12), justify="left").pack(padx=20)
         tk.Button(self.root, text="Continue", command=self.assign_roles).pack(pady=15)
 
-    # ---------------------- ROLE ASSIGNMENT ---------------------- #
+
     def assign_roles(self):
         n = len(self.original_players)
         num_evil = {5:2,6:2,7:3,8:3,9:3,10:4}[n]
@@ -92,7 +92,7 @@ class AvalonApp:
         self.metadata.append("Roles assigned.")
         self.show_role_privacy()
 
-    # ---------------------- PRIVACY & ROLE REVEAL ---------------------- #
+
     def show_role_privacy(self):
         self.clear_root()
         if self.current_player_index >= len(self.original_players):
@@ -130,23 +130,23 @@ class AvalonApp:
         self.current_player_index += 1
         self.show_role_privacy()
 
-    # ---------------------- TEAM PROPOSAL PHASE ---------------------- #
+
     def start_team_proposal(self):
         self.clear_root()
-        # Log round start only once per round
+ 
         if self.failed_proposals == 0 and not any(f"Round {self.round_number} start" in e for e in self.metadata):
             self.metadata.append(f"Round {self.round_number} start.")
-        # Select next leader randomly from eligible
+
         eligible = [p for p in self.original_players if p not in self.previous_leaders]
         leader = random.choice(eligible)
         self.current_leader = leader
         self.metadata.append(f"Leader {leader} selected for Round {self.round_number}")
 
-        # Determine team size
+
         sizes = {5:[2,3,2,3,3],6:[2,3,4,3,4],7:[2,3,3,4,4],8:[3,4,4,5,5],9:[3,4,4,5,5],10:[3,4,4,5,5]}
         ts = sizes[len(self.original_players)][self.round_number-1]
 
-        # Build Past Missions text
+ 
         past = ""
         for idx,m in enumerate(self.past_missions,1):
             res = "Passed" if m['pass'] else 'Failed'
@@ -155,7 +155,7 @@ class AvalonApp:
                 line += f" (Fails: {m.get('fails',0)})"
             past += line + "\n"
 
-        # Display UI
+
         tk.Label(self.root, text="Team Proposal Phase", font=("Arial",14,"bold")).pack()
         info = (
             f"Round {self.round_number}/5 | Leader: {leader}\n"
@@ -200,7 +200,7 @@ class AvalonApp:
         self.previous_leaders.append(self.current_leader)
         self.metadata.append(f"Proposal by {self.current_leader} rejected")
         if self.failed_proposals >= self.max_failed_proposals:
-            # Auto-fail mission and continue
+            # rule exception with mission failing
             self.metadata.append(f"Mission {self.round_number} auto-failed after {self.failed_proposals} rejections")
             self.past_missions.append({
                 'leader': self.current_leader,
@@ -208,7 +208,7 @@ class AvalonApp:
                 'pass': False,
                 'fails': 0
             })
-            # Advance round
+       
             self.round_number += 1
             self.failed_proposals = 0
             self.previous_leaders = []
@@ -220,7 +220,7 @@ class AvalonApp:
         self.metadata.append(f"Proposal by {self.current_leader} approved")
         self.begin_mission_voting()
 
-    # ---------------------- MISSION VOTING ---------------------- #
+
     def begin_mission_voting(self):
         self.mission_votes = []
         self.mission_vote_index = 0
@@ -282,3 +282,4 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = AvalonApp(root)
     root.mainloop()
+
